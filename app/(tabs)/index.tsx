@@ -1,98 +1,79 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useCallback, useEffect } from "react";
+import { Text, View } from "react-native";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { PremiumDropsSection } from "@/src/components/billing/PremiumDropsSection";
+import { ErrorState } from "@/src/components/ErrorState";
+import { LoadingState } from "@/src/components/LoadingState";
+import { MasonryGrid } from "@/src/components/MasonryGrid";
+import { ScreenHeader } from "@/src/components/ScreenHeader";
+import { usePremium } from "@/src/contexts/AuthContext";
+import { useSaveWithPremiumGate } from "@/src/hooks/useSaveWithPremiumGate";
+import { useProductStore } from "@/src/store/useProductStore";
 
-export default function HomeScreen() {
+export default function FeedScreen() {
+  const products = useProductStore((state) => state.products);
+  const isLoading = useProductStore((state) => state.isLoading);
+  const error = useProductStore((state) => state.error);
+  const fetchProducts = useProductStore((state) => state.fetchProducts);
+  const { isPremium } = usePremium();
+  const {
+    handleSavePress,
+    premiumModal,
+    savedCount,
+    savesRemaining,
+    freeSaveLimit,
+  } = useSaveWithPremiumGate();
+
+  useEffect(() => {
+    if (products.length === 0) {
+      void fetchProducts();
+    }
+  }, [fetchProducts, products.length]);
+
+  const handleRefresh = useCallback(() => {
+    void fetchProducts();
+  }, [fetchProducts]);
+
+  if (isLoading && products.length === 0) {
+    return <LoadingState message="Curating today's outfits..." />;
+  }
+
+  if (error && products.length === 0) {
+    return <ErrorState message={error} onRetry={handleRefresh} />;
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <View className="flex-1 bg-cream">
+      <ScreenHeader
+        title="Discover"
+        subtitle="Curated SHEIN looks, styled for you"
+        rightElement={
+          !isPremium ? (
+            <View className="rounded-full bg-gold/15 px-3 py-1.5">
+              <Text className="text-[11px] font-bold text-gold">
+                {savedCount}/{freeSaveLimit} saves
+              </Text>
+            </View>
+          ) : null
+        }
+      />
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      <View className="px-4 pt-4">
+        <PremiumDropsSection products={products} />
+        {!isPremium && savesRemaining === 0 ? (
+          <View className="mb-3 rounded-2xl border border-gold/25 bg-gold/10 px-4 py-3">
+            <Text className="text-sm font-semibold text-charcoal">
+              Save limit reached
+            </Text>
+            <Text className="mt-1 text-xs leading-5 text-charcoal/55">
+              Upgrade to Premium for unlimited closet saves and exclusive drops.
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
+      <MasonryGrid products={products} onSavePress={handleSavePress} />
+      {premiumModal}
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});

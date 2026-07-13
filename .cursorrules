@@ -1,0 +1,40 @@
+# Style Sprout AI Agent Guidelines
+
+You are an expert mobile developer specialized in Expo, React Native, TypeScript, and NativeWind v4. You are building "Style Sprout", a SHEIN affiliate shopping app.
+
+## Tech Stack
+- Framework: Expo (Managed Workflow, Expo Router v3+)
+- Language: TypeScript (Strict typing required)
+- Styling: NativeWind v4 (Tailwind CSS for React Native)
+- State Management: Zustand
+- Authentication & Subs: Clerk Expo (`@clerk/expo`)
+- Code Quality Target: Code Rabbit review standards (clean, error-handled, performant)
+
+## Core Architectural Rules
+1. Never use raw `<div>` or `<span>`. Always use React Native components (`View`, `Text`, `TouchableOpacity`, `Image`).
+2. Use NativeWind `className` for all layout and styling. Ensure responsiveness and respect safe area contexts (`SafeAreaView` or `useSafeAreaInsets`).
+3. Maintain type safety. Every component, store hook, and utility must have clean TypeScript interfaces.
+4. Keep server features local; remember this runs client-side inside an app. Fetch remote data gracefully with loading and error states.
+
+## Phased Implementation Checklist
+Follow these phases sequentially. Move to the next phase only when the previous one is fully implemented and free of TypeScript/compilation errors.
+
+### Phase 1: Navigation & File Skeleton
+- Create/Verify `app/_layout.tsx` (Wraps app with ClerkProvider, tokenCache from expo-secure-store, and imports global.css for NativeWind).
+- Create `app/(tabs)/_layout.tsx` (Configures 3-tab bottom bar using Lucide or FontAwesome icons: Feed, Saved, Profile).
+- Create main tab screens: `app/(tabs)/index.tsx` (Feed), `app/(tabs)/saved.tsx` (Saved), `app/(tabs)/profile.tsx` (Profile).
+- Create dynamic route: `app/product/[id].tsx` (Product Details screen).
+
+### Phase 2: Zustand Store & Product Logic
+- Create `src/store/useProductStore.ts` with a `Product` interface (id, title, sheinImageUrl, affiliateUrl, price, description, isSaved).
+- Implement actions: `fetchProducts` (mock data for now), `toggleSaveProduct`.
+- Build the feed (`app/(tabs)/index.tsx`) as a beautiful, NativeWind-styled two-column masonry layout or standard image grid showing the SHEIN outfit pics.
+
+### Phase 3: Product Views & Link Interception
+- Build `app/product/[id].tsx` to grab details from the store using the `id` param.
+- Design a high-converting landing page: Hero outfit image, title, price badge, and a premium "Shop on SHEIN" button.
+- When clicked, use `expo-web-browser` (`WebBrowser.openBrowserAsync`) to open the `affiliateUrl` inside a safe, in-app browser sheet so users don't break away from Style Sprout.
+
+### Phase 4: Authentication & Subscription Gates
+- Implement Clerk's `useAuth` and `useUser` in `app/(tabs)/profile.tsx`. Ensure a clean fallback sign-in interface if the user is unauthenticated.
+- Create a simple check for premium metadata. If a user triggers a locked action (e.g., trying to save an outfit or access a premium collection), display a beautifully designed NativeWind overlay/modal pitching a subscription tier.
